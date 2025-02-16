@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 require('dotenv').config();
 const port = process.env.PORT || 5000
@@ -32,12 +32,39 @@ async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
+    const foodCollections = client.db('restaurantDB').collection("foods");
+    const orderCollections = client.db('restaurantDB').collection("order");
+
+
+    app.get('/foods',async(req,res) => {
+        let option = {};
+        const result = await foodCollections.find().toArray();
+        res.send(result);
+    });
+    
+    app.get('/single-food/:id',async(req,res) => {
+      const id = req.params.id;
+      const query = {_id:new ObjectId(id)};
+      const result = await foodCollections.findOne(query);
+      console.log(result);
+      res.send(result)
+    })
+
+    app.post('/order',async(req,res) => {
+      const body = req.body
+      const result = await orderCollections.insertOne(body);
+      res.send(result);
+    })
+
+    app.get('/order',async(req,res) => {
+
+    })
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
-    await client.close();
+    // await client.close();
   }
 }
 run().catch(console.dir);
