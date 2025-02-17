@@ -15,9 +15,6 @@ app.get('/',(req,res) => {
 });
 
 
-
-
-
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.lewcb.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -38,7 +35,10 @@ async function run() {
 
     app.get('/foods',async(req,res) => {
         let option = {};
-        const result = await foodCollections.find().toArray();
+        if(req.query.category){
+          option = {category:req.query.category}
+        }
+        const result = await foodCollections.find(option).toArray();
         res.send(result);
     });
     
@@ -48,6 +48,16 @@ async function run() {
       const result = await foodCollections.findOne(query);
       console.log(result);
       res.send(result)
+    });
+
+    app.put('/quantity/:id',async(req,res) => {
+      const id = req.params.id
+      const data = req.body.quantity
+      const result = await foodCollections.updateOne(
+        {_id:new ObjectId(id)},
+        {$set:{quantity:data}}
+      )
+      res.send(result);
     })
 
     app.post('/order',async(req,res) => {
@@ -56,9 +66,29 @@ async function run() {
       res.send(result);
     })
 
-    app.get('/order',async(req,res) => {
+    app.get('/top-purchase',async(req,res) => {
+      const purchaseData = await orderCollections.aggregate([
+        {
+          $group: {_id:"$product_ID",totalPurchase:{$sum:1}}
+        },
+        {
+          $sort:{totalPurchase:-1}
+        },
+        {
+          $limit:6
+        }
+      ]).toArray();
+      const productID = purchaseData.map(item => new ObjectId(item._id));
+      const products = await foodCollections.find({_id: {$in:productID}}).toArray();
+
+      const mergeData = purchaseData.map(purchaseItem => {
+        const product = products.find(prod => prod._id.toString() === purchaseItem._id.toString())
+        return  product? {...product,totalPurchase:purchaseItem.totalPurchase} :null;
+      }).filter(item => item !== null);
+      res.send(mergeData);
 
     })
+   
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
