@@ -84,6 +84,28 @@ async function run() {
       const result = await foodCollections.countDocuments(option)
       res.send({ count: result });
      
+    });
+
+    app.put('/update-food/:id',async(req,res) => {
+      const id = req.params.id 
+      const option = {_id:new ObjectId(id)}
+      const {name,image,quantity,price,category,cooking_time,origin,description,ingredients} = req.body
+      const updateDoc = {
+        $set:{
+          name,
+          image,
+          quantity,
+          price,
+          category,
+          cooking_time,
+          origin,
+          description,
+          ingredients
+        }
+      }
+      const result = await foodCollections.updateOne(option,updateDoc)
+      res.send(result);
+      console.log(result)
     })
 
     app.put('/quantity/:id', async (req, res) => {
