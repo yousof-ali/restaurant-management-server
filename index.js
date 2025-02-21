@@ -147,6 +147,24 @@ async function run() {
 
     })
 
+    app.get('/my-orders',async(req,res) => {
+      const email = req.query.email;
+      const option = {buyer_email:email};
+      const result = await orderCollections.find(option).toArray()
+      for(const foodId of result){
+        const query = {_id: new ObjectId(foodId.product_ID)}
+        const result2 = await foodCollections.findOne(query)
+        foodId.image = result2.image
+      }
+      res.send(result);
+    })
+    
+    app.delete('/delete-order/:id',async(req,res) => {
+      const id = req.params.id;
+      const query = {_id : new ObjectId(id)};
+      const result = await orderCollections.deleteOne(query);
+      res.send(result)
+    })
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
