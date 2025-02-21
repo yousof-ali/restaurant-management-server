@@ -60,13 +60,21 @@ async function run() {
       res.send(result);
     })
 
+    app.get('/my-food',async(req,res) => {
+      const query = req.query.email
+      const option = {email:query};
+      const result = await foodCollections.find(option).toArray()
+      res.send(result)
+    });
+
+
     app.get('/single-food/:id', async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await foodCollections.findOne(query);
       res.send(result)
     });
-
+ 
     app.get('/count', async (req, res) => {
       const query = req.query.category
       let option = {}
