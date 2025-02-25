@@ -31,6 +31,7 @@ async function run() {
     await client.connect();
     const foodCollections = client.db('restaurantDB').collection("foods");
     const orderCollections = client.db('restaurantDB').collection("order");
+    const favoriteCollections = client.db('restaurantDB').collection('favorite')
 
 
     app.get('/foods', async (req, res) => {
@@ -85,6 +86,11 @@ async function run() {
       res.send({ count: result });
      
     });
+
+    app.get('/total-document',async(req,res) => {
+      const result =  await foodCollections.estimatedDocumentCount();
+      res.send({totalDocument:result});
+    })
 
     app.put('/update-food/:id',async(req,res) => {
       const id = req.params.id 
@@ -158,6 +164,7 @@ async function run() {
       }
       res.send(result);
     })
+
     
     app.delete('/delete-order/:id',async(req,res) => {
       const id = req.params.id;
@@ -165,6 +172,27 @@ async function run() {
       const result = await orderCollections.deleteOne(query);
       res.send(result)
     })
+
+    app.post('/set-favorite/:id',async(req,res) => {
+         const id = req.params.id 
+         const body = req.body
+         let result
+         const isExist = await favoriteCollections.findOne({food_id:id,email:body.email},);
+         if(!isExist){
+          result = await favoriteCollections.insertOne(body);
+          res.send(result);
+         }
+         else{
+          res.send({result:'Already Added!'})
+         }
+    });
+
+    app.get('/get-favorite',async(req,res) => {
+      const query = req.query.email;
+      const result = await favoriteCollections.find({email:query}).toArray();
+      res.send(result)
+    })
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
